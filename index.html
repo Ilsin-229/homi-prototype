@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>호미 HomeBuddies — 회원가입 프로토타입</title>
+<title>호미 HomeBuddies — 프로토타입</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
@@ -13,11 +13,14 @@
   input::placeholder, select::placeholder { color: #BBB; }
   ::-webkit-scrollbar { width: 0; display: none; }
   @keyframes slideIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
-  @keyframes popIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes confetti1 { 0% { transform: translate(0,0) rotate(0deg); opacity:1; } 100% { transform: translate(-60px, -120px) rotate(200deg); opacity:0; } }
-  @keyframes confetti2 { 0% { transform: translate(0,0) rotate(0deg); opacity:1; } 100% { transform: translate(50px, -100px) rotate(-180deg); opacity:0; } }
-  @keyframes confetti3 { 0% { transform: translate(0,0) rotate(0deg); opacity:1; } 100% { transform: translate(30px, -140px) rotate(260deg); opacity:0; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+  @keyframes logoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @keyframes splashFade { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes confetti1 { 0% { transform: translate(0,0) rotate(0deg); opacity:1; } 100% { transform: translate(-60px,-120px) rotate(200deg); opacity:0; } }
+  @keyframes confetti2 { 0% { transform: translate(0,0) rotate(0deg); opacity:1; } 100% { transform: translate(50px,-100px) rotate(-180deg); opacity:0; } }
+  @keyframes confetti3 { 0% { transform: translate(0,0) rotate(0deg); opacity:1; } 100% { transform: translate(30px,-140px) rotate(260deg); opacity:0; } }
   button { font-family: inherit; }
   input, select { font-family: inherit; }
 </style>
@@ -30,14 +33,14 @@
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
-/* ─── Colors ─── */
 const C = {
   mint: "#2BBAA0", mintL: "#E8F8F5", mintBg: "#D0F0EA",
   purple: "#7C5CFC", purpleL: "#F0EBFF", purpleBg: "#E4DCFF",
   gray: "#E5E5E5", grayT: "#999", dark: "#222", white: "#FFF",
+  kakao: "#FEE500", naver: "#03C75A",
 };
 
-/* ─── Shared UI ─── */
+/* ═══ Shared UI ═══ */
 function Header({ title, step, total, onBack }) {
   return React.createElement("div", { style: { padding: "14px 20px 0", background: C.white, flexShrink: 0 } },
     React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", height: 44, position: "relative" } },
@@ -51,36 +54,37 @@ function Header({ title, step, total, onBack }) {
   );
 }
 
-function Btn({ children, onClick, color, outline, small, fullWidth = true }) {
-  const bg = outline ? C.white : (color || C.mint);
-  const fg = outline ? C.dark : C.white;
-  const bd = outline ? "1.5px solid " + C.gray : "none";
+function Btn({ children, onClick, color, outline, bg, fg, fullWidth = true, style: extraStyle }) {
+  var background = outline ? C.white : (bg || color || C.mint);
+  var textColor = outline ? C.dark : (fg || C.white);
+  var border = outline ? "1.5px solid " + C.gray : "none";
   return React.createElement("button", {
     onClick,
-    style: {
+    style: Object.assign({
       width: fullWidth ? "100%" : "auto",
-      padding: small ? "10px 18px" : "15px 24px",
-      background: bg, color: fg, border: bd,
-      borderRadius: 12, fontSize: small ? 14 : 16, fontWeight: 600,
+      padding: "15px 24px", background: background, color: textColor, border: border,
+      borderRadius: 12, fontSize: 16, fontWeight: 600,
       cursor: "pointer", transition: "transform 0.12s, box-shadow 0.2s",
       boxShadow: outline ? "none" : "0 2px 12px " + (color || C.mint) + "30",
-    },
+    }, extraStyle || {}),
     onMouseDown: function(e) { e.currentTarget.style.transform = "scale(0.97)"; },
     onMouseUp: function(e) { e.currentTarget.style.transform = "scale(1)"; },
     onMouseLeave: function(e) { e.currentTarget.style.transform = "scale(1)"; },
   }, children);
 }
 
-function Field({ label, placeholder, type, suffix, half }) {
-  const ref = useRef(null);
-  const [focused, setFocused] = useState(false);
-  return React.createElement("div", { style: { marginBottom: 16, flex: half ? 1 : undefined } },
+function Field({ label, placeholder, type, suffix, prefix }) {
+  var ref = useRef(null);
+  var _f = useState(false), focused = _f[0], setFocused = _f[1];
+  return React.createElement("div", { style: { marginBottom: 16 } },
     label && React.createElement("label", { style: { fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 6, display: "block" } }, label),
     React.createElement("div", { style: { position: "relative" } },
       React.createElement("input", {
-        ref, type: type || "text", placeholder,
+        ref: ref, type: type || "text", placeholder: placeholder,
         style: {
-          width: "100%", padding: suffix ? "13px 44px 13px 14px" : "13px 14px",
+          width: "100%", padding: "13px 14px",
+          paddingLeft: prefix ? 42 : 14,
+          paddingRight: suffix ? 44 : 14,
           border: "1.5px solid " + (focused ? C.mint : C.gray),
           borderRadius: 10, fontSize: 15, outline: "none", boxSizing: "border-box",
           fontFamily: "inherit", transition: "border-color 0.2s", background: C.white,
@@ -88,10 +92,8 @@ function Field({ label, placeholder, type, suffix, half }) {
         onFocus: function() { setFocused(true); },
         onBlur: function() { setFocused(false); },
       }),
-      suffix && React.createElement("span", {
-        style: { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 18, cursor: "pointer", userSelect: "none", opacity: 0.6 },
-        onClick: function() { ref.current && ref.current.focus(); }
-      }, suffix)
+      prefix && React.createElement("span", { style: { position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, opacity: 0.5 } }, prefix),
+      suffix && React.createElement("span", { style: { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 18, cursor: "pointer", userSelect: "none", opacity: 0.6 }, onClick: function() { ref.current && ref.current.focus(); } }, suffix)
     )
   );
 }
@@ -102,36 +104,19 @@ function Toggle({ items, value, onChange, color }) {
       var sel = value === item;
       return React.createElement("button", {
         key: item, onClick: function() { onChange(item); },
-        style: {
-          flex: 1, padding: "11px 0", borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: "pointer",
-          border: "1.5px solid " + (sel ? (color || C.mint) : C.gray),
-          background: sel ? (color || C.mint) : C.white,
-          color: sel ? C.white : C.dark,
-          transition: "all 0.2s",
-        }
+        style: { flex: 1, padding: "11px 0", borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: "pointer", border: "1.5px solid " + (sel ? (color || C.mint) : C.gray), background: sel ? (color || C.mint) : C.white, color: sel ? C.white : C.dark, transition: "all 0.2s" }
       }, item);
     })
   );
 }
 
 function Chips({ items, color, preSelected }) {
-  const [sel, setSel] = useState(new Set(preSelected || []));
-  function toggle(item) {
-    setSel(function(prev) { var n = new Set(prev); n.has(item) ? n.delete(item) : n.add(item); return n; });
-  }
+  var _s = useState(new Set(preSelected || [])), sel = _s[0], setSel = _s[1];
+  function toggle(item) { setSel(function(p) { var n = new Set(p); n.has(item) ? n.delete(item) : n.add(item); return n; }); }
   return React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 } },
     items.map(function(item) {
       var s = sel.has(item);
-      return React.createElement("button", {
-        key: item, onClick: function() { toggle(item); },
-        style: {
-          padding: "8px 16px", borderRadius: 20,
-          border: "1.5px solid " + (s ? (color || C.mint) : C.gray),
-          background: s ? (color || C.mint) : C.white,
-          color: s ? C.white : C.dark,
-          fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
-        }
-      }, item);
+      return React.createElement("button", { key: item, onClick: function() { toggle(item); }, style: { padding: "8px 16px", borderRadius: 20, border: "1.5px solid " + (s ? (color || C.mint) : C.gray), background: s ? (color || C.mint) : C.white, color: s ? C.white : C.dark, fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap" } }, item);
     })
   );
 }
@@ -143,57 +128,122 @@ function SLabel({ label, sub }) {
   );
 }
 
-function Screen({ children }) {
-  return React.createElement("div", {
-    style: { width: "100%", height: "100%", display: "flex", flexDirection: "column", background: C.white, animation: "slideIn 0.28s ease" }
-  }, children);
+function Screen({ children, noAnim }) {
+  return React.createElement("div", { style: { width: "100%", height: "100%", display: "flex", flexDirection: "column", background: C.white, animation: noAnim ? "none" : "slideIn 0.28s ease" } }, children);
 }
 
 function Body({ children, center }) {
-  return React.createElement("div", {
-    style: {
-      padding: "20px 20px", flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch",
-      display: center ? "flex" : "block",
-      flexDirection: center ? "column" : undefined,
-      alignItems: center ? "center" : undefined,
-      justifyContent: center ? "center" : undefined,
-    }
-  }, children);
+  return React.createElement("div", { style: { padding: "20px 20px", flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch", display: center ? "flex" : "block", flexDirection: center ? "column" : undefined, alignItems: center ? "center" : undefined, justifyContent: center ? "center" : undefined } }, children);
 }
 
 function Footer({ children }) {
   return React.createElement("div", { style: { padding: "10px 20px 24px", flexShrink: 0 } }, children);
 }
 
-/* ─── Step 0: 역할선택 ─── */
+/* ═══ SPLASH ═══ */
+function Splash({ goTo }) {
+  useEffect(function() {
+    var timer = setTimeout(function() { goTo("login"); }, 2500);
+    return function() { clearTimeout(timer); };
+  }, []);
+
+  return React.createElement("div", {
+    onClick: function() { goTo("login"); },
+    style: { width: "100%", height: "100%", background: C.mint, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }
+  },
+    React.createElement("div", { style: { animation: "logoFloat 2s ease-in-out infinite", marginBottom: 16 } },
+      React.createElement("div", { style: { width: 80, height: 80, borderRadius: 20, background: "rgba(255,255,255,0.95)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" } },
+        React.createElement("span", { style: { fontSize: 44 } }, "🏠")
+      )
+    ),
+    React.createElement("div", { style: { fontSize: 32, fontWeight: 800, color: C.white, marginBottom: 8, animation: "fadeUp 0.8s ease 0.3s both" } }, "Homi"),
+    React.createElement("div", { style: { fontSize: 15, color: "rgba(255,255,255,0.9)", fontWeight: 500, animation: "fadeUp 0.8s ease 0.5s both" } }, "안전한 첫 계약, 호미가 함께합니다"),
+    React.createElement("div", { style: { position: "absolute", bottom: 40, fontSize: 13, color: "rgba(255,255,255,0.6)", animation: "fadeIn 1s ease 1s both" } }, "대학생을 위한 집 구하기 플랫폼")
+  );
+}
+
+/* ═══ LOGIN ═══ */
+function Login({ goTo }) {
+  return React.createElement("div", { style: { width: "100%", height: "100%", display: "flex", flexDirection: "column", background: C.white, animation: "fadeIn 0.4s ease" } },
+    /* Header area */
+    React.createElement("div", { style: { background: C.mint, padding: "40px 20px 30px", textAlign: "center", borderRadius: "0 0 24px 24px" } },
+      React.createElement("div", { style: { width: 64, height: 64, borderRadius: 16, background: "rgba(255,255,255,0.95)", display: "inline-flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", marginBottom: 12 } },
+        React.createElement("span", { style: { fontSize: 34 } }, "🏠")
+      ),
+      React.createElement("div", { style: { fontSize: 26, fontWeight: 800, color: C.white, marginBottom: 4 } }, "Homi"),
+      React.createElement("div", { style: { fontSize: 14, color: "rgba(255,255,255,0.85)", fontWeight: 500 } }, "안전한 첫 계약의 시작")
+    ),
+
+    /* Form */
+    React.createElement("div", { style: { flex: 1, padding: "28px 20px", overflowY: "auto" } },
+      React.createElement(Field, { label: "이메일", placeholder: "이메일 주소를 입력하세요", type: "email", prefix: "✉" }),
+      React.createElement(Field, { label: "비밀번호", placeholder: "비밀번호를 입력하세요", type: "password", prefix: "🔒", suffix: "👁" }),
+      React.createElement("div", { style: { textAlign: "right", marginTop: -8, marginBottom: 20 } },
+        React.createElement("span", { style: { fontSize: 13, color: C.mint, fontWeight: 500, cursor: "pointer" } }, "비밀번호를 잊으셨나요?")
+      ),
+
+      React.createElement(Btn, { onClick: function() { goTo("step0"); } }, "로그인"),
+
+      /* Divider */
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12, margin: "20px 0" } },
+        React.createElement("div", { style: { flex: 1, height: 1, background: C.gray } }),
+        React.createElement("span", { style: { fontSize: 13, color: C.grayT } }, "또는"),
+        React.createElement("div", { style: { flex: 1, height: 1, background: C.gray } })
+      ),
+
+      /* Social buttons */
+      React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
+        React.createElement(Btn, { bg: C.kakao, fg: "#3C1E1E", onClick: function() { goTo("step0"); }, style: { boxShadow: "none" } },
+          React.createElement("span", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
+            React.createElement("span", null, "💬"), "카카오로 시작하기"
+          )
+        ),
+        React.createElement(Btn, { bg: C.naver, fg: C.white, onClick: function() { goTo("step0"); }, style: { boxShadow: "none" } },
+          React.createElement("span", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
+            React.createElement("span", { style: { fontWeight: 800 } }, "N"), "네이버로 시작하기"
+          )
+        ),
+        React.createElement(Btn, { outline: true, onClick: function() { goTo("step0"); }, style: { boxShadow: "none" } },
+          React.createElement("span", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
+            React.createElement("span", { style: { fontSize: 18, fontWeight: 700, color: "#4285F4" } }, "G"), "Google로 시작하기"
+          )
+        ),
+        React.createElement(Btn, { bg: "#000", fg: C.white, onClick: function() { goTo("step0"); }, style: { boxShadow: "none" } },
+          React.createElement("span", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
+            React.createElement("span", { style: { fontSize: 18 } }, ""), "Apple로 시작하기"
+          )
+        )
+      ),
+
+      /* Sign up link */
+      React.createElement("div", { style: { textAlign: "center", marginTop: 24 } },
+        React.createElement("span", { style: { fontSize: 13, color: C.grayT } }, "아직 호미 회원이 아니신가요?"),
+        React.createElement("div", { style: { marginTop: 8 } },
+          React.createElement("button", {
+            onClick: function() { goTo("step0"); },
+            style: { padding: "10px 24px", borderRadius: 20, border: "1.5px solid " + C.mint, background: C.white, color: C.mint, fontSize: 14, fontWeight: 600, cursor: "pointer" }
+          }, "이메일로 회원가입 →")
+        )
+      )
+    )
+  );
+}
+
+/* ═══ Step 0: 역할선택 ═══ */
 function Step0({ goTo }) {
   var _s = useState(null), sel = _s[0], setSel = _s[1];
-
   function RoleCard(p) {
     var active = sel === p.role;
-    return React.createElement("button", {
-      onClick: function() { setSel(p.role); },
-      style: {
-        width: "100%", textAlign: "left", padding: 20, marginBottom: 12,
-        border: "2px solid " + (active ? p.color : C.gray),
-        borderRadius: 16, background: active ? p.bgColor : C.white,
-        cursor: "pointer", position: "relative", transition: "all 0.25s",
-      }
-    },
-      active && React.createElement("span", {
-        style: { position: "absolute", top: 12, right: 12, background: p.color, color: C.white, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 10 }
-      }, "선택됨"),
+    return React.createElement("button", { onClick: function() { setSel(p.role); }, style: { width: "100%", textAlign: "left", padding: 20, marginBottom: 12, border: "2px solid " + (active ? p.color : C.gray), borderRadius: 16, background: active ? p.bgColor : C.white, cursor: "pointer", position: "relative", transition: "all 0.25s" } },
+      active && React.createElement("span", { style: { position: "absolute", top: 12, right: 12, background: p.color, color: C.white, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 10 } }, "선택됨"),
       React.createElement("div", { style: { fontSize: 36, marginBottom: 8 } }, p.emoji),
-      React.createElement("span", {
-        style: { display: "inline-block", padding: "2px 10px", borderRadius: 6, background: p.color, color: C.white, fontSize: 12, fontWeight: 600, marginBottom: 8 }
-      }, p.tag),
+      React.createElement("span", { style: { display: "inline-block", padding: "2px 10px", borderRadius: 6, background: p.color, color: C.white, fontSize: 12, fontWeight: 600, marginBottom: 8 } }, p.tag),
       React.createElement("div", { style: { fontSize: 17, fontWeight: 700, color: C.dark, marginBottom: 6 } }, p.title),
       React.createElement("div", { style: { fontSize: 13, color: "#666", lineHeight: 1.5 } }, p.desc)
     );
   }
-
   return React.createElement(Screen, null,
-    React.createElement(Header, { title: "회원가입", step: 1, total: 5, onBack: function() {} }),
+    React.createElement(Header, { title: "회원가입", step: 1, total: 5, onBack: function() { goTo("login"); } }),
     React.createElement(Body, null,
       React.createElement("h1", { style: { fontSize: 24, fontWeight: 800, color: C.dark, lineHeight: 1.35, margin: "0 0 6px" } }, "호미에서 어떤 역할로", React.createElement("br"), "활동하실 건가요?"),
       React.createElement("p", { style: { fontSize: 14, color: "#666", lineHeight: 1.5, margin: "0 0 24px" } }, "역할에 따라 이용할 수 있는 서비스가 달라져요.", React.createElement("br"), "가입 후에도 마이페이지에서 변경할 수 있습니다."),
@@ -211,7 +261,7 @@ function Step0({ goTo }) {
   );
 }
 
-/* ─── Step 1: 기본정보 ─── */
+/* ═══ Step 1: 기본정보 ═══ */
 function Step1({ goTo, role, goBack }) {
   return React.createElement(Screen, null,
     React.createElement(Header, { title: "회원가입", step: 1, total: 4, onBack: goBack }),
@@ -237,23 +287,12 @@ function Step1({ goTo, role, goBack }) {
   );
 }
 
-/* ─── Step 2 멘티 ─── */
+/* ═══ Step 2 멘티 ═══ */
 function Step2Mentee({ goTo, goBack }) {
   var _g = useState("여성"), gender = _g[0], setGender = _g[1];
   var _c = useState("월세"), contract = _c[0], setContract = _c[1];
   var _s = useState("proxy"), svc = _s[0], setSvc = _s[1];
-
-  function ServiceCard(p) {
-    var active = svc === p.k;
-    return React.createElement("button", {
-      onClick: function() { setSvc(p.k); },
-      style: { flex: 1, padding: 16, borderRadius: 14, textAlign: "left", cursor: "pointer", border: "2px solid " + (active ? C.mint : C.gray), background: active ? C.mintL : C.white, transition: "all 0.2s" }
-    },
-      React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: active ? C.mint : C.dark, marginBottom: 4 } }, p.label + " " + p.emoji),
-      React.createElement("div", { style: { fontSize: 12, color: "#666" } }, p.desc)
-    );
-  }
-
+  function SvcCard(p) { var a = svc === p.k; return React.createElement("button", { onClick: function() { setSvc(p.k); }, style: { flex: 1, padding: 16, borderRadius: 14, textAlign: "left", cursor: "pointer", border: "2px solid " + (a ? C.mint : C.gray), background: a ? C.mintL : C.white, transition: "all 0.2s" } }, React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: a ? C.mint : C.dark, marginBottom: 4 } }, p.label + " " + p.emoji), React.createElement("div", { style: { fontSize: 12, color: "#666" } }, p.desc)); }
   return React.createElement(Screen, null,
     React.createElement(Header, { title: "회원가입", step: 2, total: 5, onBack: goBack }),
     React.createElement(Body, null,
@@ -261,9 +300,7 @@ function Step2Mentee({ goTo, goBack }) {
       React.createElement("h1", { style: { fontSize: 22, fontWeight: 800, color: C.dark, margin: "0 0 4px" } }, "추가 정보"),
       React.createElement("p", { style: { fontSize: 13, color: "#666", margin: "0 0 16px" } }, "더 잘 맞는 매니저를 찾아드릴게요."),
       React.createElement(SLabel, { label: "생년월일" }),
-      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 4 } },
-        ["YYYY년", "MM월", "DD일"].map(function(ph) { return React.createElement("input", { key: ph, placeholder: ph, style: { flex: 1, padding: "11px 8px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", textAlign: "center" } }); })
-      ),
+      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 4 } }, ["YYYY년", "MM월", "DD일"].map(function(ph) { return React.createElement("input", { key: ph, placeholder: ph, style: { flex: 1, padding: "11px 8px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", textAlign: "center" } }); })),
       React.createElement(SLabel, { label: "성별" }),
       React.createElement(Toggle, { items: ["남성", "여성", "선택 안 함"], value: gender, onChange: setGender, color: C.mint }),
       React.createElement(SLabel, { label: "현재 거주지" }),
@@ -275,43 +312,24 @@ function Step2Mentee({ goTo, goBack }) {
       React.createElement(SLabel, { label: "희망 계약 유형", sub: "복수 선택" }),
       React.createElement(Toggle, { items: ["월세", "전세", "반전세"], value: contract, onChange: setContract, color: C.mint }),
       React.createElement(SLabel, { label: "금액" }),
-      React.createElement("div", { style: { display: "flex", gap: 8 } },
-        [1,2,3].map(function(i) { return React.createElement("div", { key: i, style: { flex: 1, position: "relative" } }, React.createElement("input", { style: { width: "100%", padding: "11px 40px 11px 10px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" } }), React.createElement("span", { style: { position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: C.grayT } }, "만원")); })
-      ),
+      React.createElement("div", { style: { display: "flex", gap: 8 } }, [1,2,3].map(function(i) { return React.createElement("div", { key: i, style: { flex: 1, position: "relative" } }, React.createElement("input", { style: { width: "100%", padding: "11px 40px 11px 10px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" } }), React.createElement("span", { style: { position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: C.grayT } }, "만원")); })),
       React.createElement(SLabel, { label: "기타 조건", sub: "복수 선택" }),
       React.createElement(Chips, { items: ["반려동물 가능", "주차 가능", "엘리베이터", "+"], color: C.mint }),
       React.createElement(SLabel, { label: "희망 서비스" }),
-      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 4 } },
-        React.createElement(ServiceCard, { k: "proxy", emoji: "🏃", label: "대행", desc: "매니저가 대신 집을 봐줘요" }),
-        React.createElement(ServiceCard, { k: "accompany", emoji: "🤝", label: "동행", desc: "매니저와 함께 집을 보러 가요" })
-      ),
+      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 4 } }, React.createElement(SvcCard, { k: "proxy", emoji: "🏃", label: "대행", desc: "매니저가 대신 집을 봐줘요" }), React.createElement(SvcCard, { k: "accompany", emoji: "🤝", label: "동행", desc: "매니저와 함께 집을 보러 가요" })),
       React.createElement("p", { style: { fontSize: 12, color: C.grayT, margin: "4px 0 0" } }, "둘 다 선택 가능 · 이후 변경 가능")
     ),
-    React.createElement(Footer, null,
-      React.createElement(Btn, { onClick: function() { goTo("step3auth"); } }, "완료"),
-      React.createElement("p", { style: { fontSize: 12, color: C.grayT, textAlign: "center", marginTop: 6 } }, "마이페이지에서 언제든 수정할 수 있어요.")
-    )
+    React.createElement(Footer, null, React.createElement(Btn, { onClick: function() { goTo("step3auth"); } }, "완료"), React.createElement("p", { style: { fontSize: 12, color: C.grayT, textAlign: "center", marginTop: 6 } }, "마이페이지에서 언제든 수정할 수 있어요."))
   );
 }
 
-/* ─── Step 2 멘토 ─── */
+/* ═══ Step 2 멘토 ═══ */
 function Step2Mentor({ goTo, goBack }) {
   var _g = useState("남성"), gender = _g[0], setGender = _g[1];
   var _n = useState(3), count = _n[0], setCount = _n[1];
   var _s = useState("proxy"), svc = _s[0], setSvc = _s[1];
   var _l = useState("중"), level = _l[0], setLevel = _l[1];
-
-  function ServiceCard(p) {
-    var active = svc === p.k;
-    return React.createElement("button", {
-      onClick: function() { setSvc(p.k); },
-      style: { flex: 1, padding: 16, borderRadius: 14, textAlign: "left", cursor: "pointer", border: "2px solid " + (active ? C.purple : C.gray), background: active ? C.purpleL : C.white, transition: "all 0.2s" }
-    },
-      React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: active ? C.purple : C.dark, marginBottom: 4 } }, p.label + " " + p.emoji),
-      React.createElement("div", { style: { fontSize: 12, color: "#666" } }, p.desc)
-    );
-  }
-
+  function SvcCard(p) { var a = svc === p.k; return React.createElement("button", { onClick: function() { setSvc(p.k); }, style: { flex: 1, padding: 16, borderRadius: 14, textAlign: "left", cursor: "pointer", border: "2px solid " + (a ? C.purple : C.gray), background: a ? C.purpleL : C.white, transition: "all 0.2s" } }, React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: a ? C.purple : C.dark, marginBottom: 4 } }, p.label + " " + p.emoji), React.createElement("div", { style: { fontSize: 12, color: "#666" } }, p.desc)); }
   return React.createElement(Screen, null,
     React.createElement(Header, { title: "회원가입", step: 2, total: 5, onBack: goBack }),
     React.createElement(Body, null,
@@ -319,9 +337,7 @@ function Step2Mentor({ goTo, goBack }) {
       React.createElement("h1", { style: { fontSize: 22, fontWeight: 800, color: C.dark, margin: "0 0 4px" } }, "추가 정보"),
       React.createElement("p", { style: { fontSize: 13, color: "#666", margin: "0 0 16px" } }, "매칭 품질을 높이기 위한 정보예요."),
       React.createElement(SLabel, { label: "생년월일" }),
-      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 4 } },
-        ["YYYY년", "MM월", "DD일"].map(function(ph) { return React.createElement("input", { key: ph, placeholder: ph, style: { flex: 1, padding: "11px 8px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", textAlign: "center" } }); })
-      ),
+      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 4 } }, ["YYYY년", "MM월", "DD일"].map(function(ph) { return React.createElement("input", { key: ph, placeholder: ph, style: { flex: 1, padding: "11px 8px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", textAlign: "center" } }); })),
       React.createElement(SLabel, { label: "성별" }),
       React.createElement(Toggle, { items: ["남성", "여성", "선택 안 함"], value: gender, onChange: setGender, color: C.purple }),
       React.createElement(SLabel, { label: "현재 거주지" }),
@@ -339,34 +355,17 @@ function Step2Mentor({ goTo, goBack }) {
         React.createElement("span", { style: { fontSize: 13, color: "#888", marginLeft: 8 } }, "많을수록 더 신뢰받아요 🏅")
       ),
       React.createElement(SLabel, { label: "제공 가능한 서비스" }),
-      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 8 } },
-        React.createElement(ServiceCard, { k: "proxy", emoji: "🏃", label: "대행", desc: "내가 대신 집을 보고 보고해요" }),
-        React.createElement(ServiceCard, { k: "accompany", emoji: "🤝", label: "동행", desc: "함께 집을 보러 가서 도와줘요" })
-      ),
+      React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 8 } }, React.createElement(SvcCard, { k: "proxy", emoji: "🏃", label: "대행", desc: "내가 대신 집을 보고 보고해요" }), React.createElement(SvcCard, { k: "accompany", emoji: "🤝", label: "동행", desc: "함께 집을 보러 가서 도와줘요" })),
       React.createElement(SLabel, { label: "전공 및 직업", sub: "선택" }),
       React.createElement("input", { placeholder: "예: 건축공학과 / 인테리어 디자이너", style: { width: "100%", padding: "11px 14px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" } }),
       React.createElement(SLabel, { label: "분리 점검 전문도" }),
-      React.createElement("div", { style: { display: "flex", gap: 8 } },
-        [{ k: "상", d: "구조·하자 정말 꼼꼼" }, { k: "중", d: "주요 항목 체크 가능" }, { k: "하", d: "기본 체크리스트 이용" }].map(function(l) {
-          var active = level === l.k;
-          return React.createElement("button", {
-            key: l.k, onClick: function() { setLevel(l.k); },
-            style: { flex: 1, padding: "12px 8px", borderRadius: 12, textAlign: "center", cursor: "pointer", border: "2px solid " + (active ? C.purple : C.gray), background: active ? C.purpleL : C.white, transition: "all 0.2s" }
-          },
-            React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: active ? C.purple : C.dark } }, l.k),
-            React.createElement("div", { style: { fontSize: 11, color: "#666", marginTop: 2 } }, l.d)
-          );
-        })
-      )
+      React.createElement("div", { style: { display: "flex", gap: 8 } }, [{ k: "상", d: "구조·하자 정말 꼼꼼" }, { k: "중", d: "주요 항목 체크 가능" }, { k: "하", d: "기본 체크리스트 이용" }].map(function(l) { var a = level === l.k; return React.createElement("button", { key: l.k, onClick: function() { setLevel(l.k); }, style: { flex: 1, padding: "12px 8px", borderRadius: 12, textAlign: "center", cursor: "pointer", border: "2px solid " + (a ? C.purple : C.gray), background: a ? C.purpleL : C.white, transition: "all 0.2s" } }, React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: a ? C.purple : C.dark } }, l.k), React.createElement("div", { style: { fontSize: 11, color: "#666", marginTop: 2 } }, l.d)); }))
     ),
-    React.createElement(Footer, null,
-      React.createElement(Btn, { color: C.purple, onClick: function() { goTo("step3auth"); } }, "완료"),
-      React.createElement("p", { style: { fontSize: 12, color: C.grayT, textAlign: "center", marginTop: 6 } }, "마이페이지에서 언제든 수정할 수 있어요.")
-    )
+    React.createElement(Footer, null, React.createElement(Btn, { color: C.purple, onClick: function() { goTo("step3auth"); } }, "완료"), React.createElement("p", { style: { fontSize: 12, color: C.grayT, textAlign: "center", marginTop: 6 } }, "마이페이지에서 언제든 수정할 수 있어요."))
   );
 }
 
-/* ─── Step 3: 학생인증 ─── */
+/* ═══ Step 3: 학생인증 ═══ */
 function Step3Auth({ goTo, goBack }) {
   return React.createElement(Screen, null,
     React.createElement(Header, { title: "회원가입", step: 2, total: 4, onBack: goBack }),
@@ -379,9 +378,7 @@ function Step3Auth({ goTo, goBack }) {
       React.createElement("div", { style: { marginBottom: 20 } },
         React.createElement("label", { style: { fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 6, display: "block" } }, "입학년도"),
         React.createElement("div", { style: { position: "relative" } },
-          React.createElement("select", { style: { width: "100%", padding: "13px 16px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 15, outline: "none", appearance: "none", background: C.white, fontFamily: "inherit", cursor: "pointer" } },
-            React.createElement("option", null, "2024"), React.createElement("option", null, "2023"), React.createElement("option", null, "2022"), React.createElement("option", null, "2021")
-          ),
+          React.createElement("select", { style: { width: "100%", padding: "13px 16px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 15, outline: "none", appearance: "none", background: C.white, fontFamily: "inherit", cursor: "pointer" } }, React.createElement("option", null, "2024"), React.createElement("option", null, "2023"), React.createElement("option", null, "2022"), React.createElement("option", null, "2021")),
           React.createElement("span", { style: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: C.grayT } }, "▾")
         )
       ),
@@ -395,47 +392,34 @@ function Step3Auth({ goTo, goBack }) {
         )
       )
     ),
-    React.createElement(Footer, null,
-      React.createElement(Btn, { onClick: function() { goTo("step4confirm"); } }, "인증 요청하기")
-    )
+    React.createElement(Footer, null, React.createElement(Btn, { onClick: function() { goTo("step4confirm"); } }, "인증 요청하기"))
   );
 }
 
-/* ─── Step 4: 인증확인 ─── */
+/* ═══ Step 4: 인증확인 ═══ */
 function Step4Confirm({ goTo, goBack }) {
   var rows = [["대학교", "연세대학교"], ["학번", "2024123456"], ["학과", "언더우드국제대학 CDM"], ["입학년도", "2024"]];
   return React.createElement(Screen, null,
     React.createElement(Header, { title: "회원가입", step: 3, total: 4, onBack: goBack }),
     React.createElement(Body, { center: true },
-      React.createElement("div", { style: { width: 80, height: 80, borderRadius: "50%", background: "#E8F8F0", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" } },
-        React.createElement("span", { style: { fontSize: 40 } }, "✅")
-      ),
+      React.createElement("div", { style: { width: 80, height: 80, borderRadius: "50%", background: "#E8F8F0", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" } }, React.createElement("span", { style: { fontSize: 40 } }, "✅")),
       React.createElement("h1", { style: { fontSize: 22, fontWeight: 800, color: C.dark, margin: "0 0 8px", textAlign: "center" } }, "학생 인증이 완료되었습니다!"),
       React.createElement("p", { style: { fontSize: 14, color: "#666", textAlign: "center", lineHeight: 1.5, margin: "0 0 32px" } }, "인증 정보가 확인되었습니다.", React.createElement("br"), "이제 호미의 모든 서비스를 이용할 수 있어요."),
       React.createElement("div", { style: { width: "100%", padding: 20, borderRadius: 16, background: "#F8F8F8", marginBottom: 16 } },
         React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 16 } }, "인증 정보"),
-        rows.map(function(r) {
-          return React.createElement("div", { key: r[0], style: { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #EDEDED" } },
-            React.createElement("span", { style: { fontSize: 14, color: C.grayT } }, r[0]),
-            React.createElement("span", { style: { fontSize: 14, fontWeight: 600, color: C.dark } }, r[1])
-          );
-        })
+        rows.map(function(r) { return React.createElement("div", { key: r[0], style: { display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #EDEDED" } }, React.createElement("span", { style: { fontSize: 14, color: C.grayT } }, r[0]), React.createElement("span", { style: { fontSize: 14, fontWeight: 600, color: C.dark } }, r[1])); })
       ),
       React.createElement("span", { style: { display: "inline-block", padding: "8px 20px", borderRadius: 20, border: "1.5px solid " + C.mint, color: C.mint, fontSize: 14, fontWeight: 600 } }, "🎓 재학생 인증 완료")
     ),
-    React.createElement(Footer, null,
-      React.createElement(Btn, { onClick: function() { goTo("step5area"); } }, "다음")
-    )
+    React.createElement(Footer, null, React.createElement(Btn, { onClick: function() { goTo("step5area"); } }, "다음"))
   );
 }
 
-/* ─── Step 5: 관심지역 ─── */
+/* ═══ Step 5: 관심지역 ═══ */
 function Step5Area({ goTo, goBack }) {
   var allAreas = ["마포구 · 서교동", "마포구 · 연남동", "서대문구 · 신촌", "관악구 · 신림동", "성북구 · 안암동", "동대문구 · 회기", "광진구 · 건대입구", "서대문구 · 이대", "종로구 · 혜화"];
   var _s = useState(new Set(["마포구 · 서교동", "서대문구 · 신촌"])), sel = _s[0], setSel = _s[1];
-
   function toggle(a) { setSel(function(p) { var n = new Set(p); n.has(a) ? n.delete(a) : n.add(a); return n; }); }
-
   return React.createElement(Screen, null,
     React.createElement(Header, { title: "회원가입", step: 4, total: 4, onBack: goBack }),
     React.createElement(Body, null,
@@ -444,19 +428,10 @@ function Step5Area({ goTo, goBack }) {
       React.createElement(SLabel, { label: "관심 지역 검색" }),
       React.createElement("input", { placeholder: "🔍 지역, 지하철역, 대학교 등을 검색", style: { width: "100%", padding: "13px 16px", border: "1.5px solid " + C.gray, borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit", marginBottom: 20 } }),
       React.createElement(SLabel, { label: "인기 지역" }),
-      React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 } },
-        allAreas.map(function(a) {
-          var s = sel.has(a);
-          return React.createElement("button", { key: a, onClick: function() { toggle(a); }, style: { padding: "8px 14px", borderRadius: 20, border: "1.5px solid " + (s ? C.mint : C.gray), background: s ? C.mintL : C.white, color: s ? C.mint : C.dark, fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s" } }, a);
-        })
-      ),
+      React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 } }, allAreas.map(function(a) { var s = sel.has(a); return React.createElement("button", { key: a, onClick: function() { toggle(a); }, style: { padding: "8px 14px", borderRadius: 20, border: "1.5px solid " + (s ? C.mint : C.gray), background: s ? C.mintL : C.white, color: s ? C.mint : C.dark, fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.2s" } }, a); })),
       sel.size > 0 && React.createElement(React.Fragment, null,
         React.createElement(SLabel, { label: "선택된 지역" }),
-        React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 } },
-          Array.from(sel).map(function(a) {
-            return React.createElement("span", { key: a, onClick: function() { toggle(a); }, style: { padding: "8px 14px", borderRadius: 20, background: C.mintL, border: "1.5px solid " + C.mint, color: C.mint, fontSize: 13, fontWeight: 600, cursor: "pointer" } }, a + " ✕");
-          })
-        )
+        React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 } }, Array.from(sel).map(function(a) { return React.createElement("span", { key: a, onClick: function() { toggle(a); }, style: { padding: "8px 14px", borderRadius: 20, background: C.mintL, border: "1.5px solid " + C.mint, color: C.mint, fontSize: 13, fontWeight: 600, cursor: "pointer" } }, a + " ✕"); }))
       ),
       React.createElement(SLabel, { label: "관심 매물 유형", sub: "중복 선택 가능" }),
       React.createElement(Chips, { items: ["원룸", "투룸", "오피스텔", "고시원"], color: C.mint, preSelected: ["원룸", "투룸"] })
@@ -470,30 +445,26 @@ function Step5Area({ goTo, goBack }) {
   );
 }
 
-/* ─── Complete ─── */
+/* ═══ Complete ═══ */
 function Complete({ goTo }) {
   return React.createElement(Screen, null,
     React.createElement(Body, { center: true },
       React.createElement("div", { style: { position: "relative", marginBottom: 28 } },
-        React.createElement("div", { style: { width: 100, height: 100, borderRadius: "50%", background: "linear-gradient(135deg, " + C.mintL + ", " + C.mintBg + ")", display: "flex", alignItems: "center", justifyContent: "center", animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" } },
-          React.createElement("span", { style: { fontSize: 48 } }, "🏠")
-        ),
-        ["🎉", "✨", "🎊"].map(function(e, i) {
-          return React.createElement("span", { key: i, style: { position: "absolute", top: 0, left: "50%", fontSize: 20, animation: "confetti" + (i + 1) + " 0.8s ease forwards", animationDelay: (0.2 + i * 0.15) + "s", opacity: 0 } }, e);
-        })
+        React.createElement("div", { style: { width: 100, height: 100, borderRadius: "50%", background: "linear-gradient(135deg, " + C.mintL + ", " + C.mintBg + ")", display: "flex", alignItems: "center", justifyContent: "center", animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" } }, React.createElement("span", { style: { fontSize: 48 } }, "🏠")),
+        ["🎉", "✨", "🎊"].map(function(e, i) { return React.createElement("span", { key: i, style: { position: "absolute", top: 0, left: "50%", fontSize: 20, animation: "confetti" + (i + 1) + " 0.8s ease forwards", animationDelay: (0.2 + i * 0.15) + "s", opacity: 0 } }, e); })
       ),
       React.createElement("h1", { style: { fontSize: 26, fontWeight: 800, color: C.dark, margin: "0 0 8px", animation: "fadeIn 0.6s ease 0.3s both" } }, "환영합니다!"),
       React.createElement("p", { style: { fontSize: 15, color: "#666", lineHeight: 1.6, margin: "0 0 40px", textAlign: "center", animation: "fadeIn 0.6s ease 0.5s both" } }, "호미 회원가입이 완료되었어요.", React.createElement("br"), "이제 안전한 자취를 시작해보세요!"),
       React.createElement("div", { style: { width: "100%", animation: "fadeIn 0.6s ease 0.7s both" } },
-        React.createElement(Btn, { onClick: function() { goTo("step0"); } }, "처음으로 돌아가기")
+        React.createElement(Btn, { onClick: function() { goTo("splash"); } }, "처음으로 돌아가기")
       )
     )
   );
 }
 
-/* ─── App ─── */
+/* ═══ App ═══ */
 function App() {
-  var _scr = useState("step0"), screen = _scr[0], setScreen = _scr[1];
+  var _scr = useState("splash"), screen = _scr[0], setScreen = _scr[1];
   var _role = useState("mentee"), role = _role[0], setRole = _role[1];
   var _hist = useState([]), history = _hist[0], setHistory = _hist[1];
 
@@ -511,6 +482,8 @@ function App() {
   }
 
   var screens = {
+    splash: React.createElement(Splash, { goTo: goTo }),
+    login: React.createElement(Login, { goTo: goTo }),
     step0: React.createElement(Step0, { goTo: goTo }),
     step1: React.createElement(Step1, { goTo: goTo, role: role, goBack: goBack }),
     step2mentee: React.createElement(Step2Mentee, { goTo: goTo, goBack: goBack }),
@@ -522,12 +495,7 @@ function App() {
   };
 
   return React.createElement("div", {
-    style: {
-      width: "100%", maxWidth: 393, height: "100vh", maxHeight: 852,
-      margin: "0 auto", background: "#F0F0F0", position: "relative",
-      overflow: "hidden", borderRadius: window.innerWidth > 500 ? 28 : 0,
-      boxShadow: window.innerWidth > 500 ? "0 8px 60px rgba(0,0,0,0.18)" : "none",
-    }
+    style: { width: "100%", maxWidth: 393, height: "100vh", maxHeight: 852, margin: "0 auto", background: "#F0F0F0", position: "relative", overflow: "hidden", borderRadius: window.innerWidth > 500 ? 28 : 0, boxShadow: window.innerWidth > 500 ? "0 8px 60px rgba(0,0,0,0.18)" : "none" }
   }, screens[screen]);
 }
 
